@@ -110,7 +110,12 @@ export default async (req) => {
     if (!uploadRes.ok) return json({ error: "QB upload failed", detail: await uploadRes.text() }, 502);
 
     // Signed public URL Outlook can fetch (no QB auth). Valid 1 hour.
-    const siteUrl = (process.env.URL || process.env.DEPLOY_PRIME_URL || "").replace(/\/$/, "");
+    // Always use an absolute https URL — Outlook rejects relative /api/... paths.
+    const siteUrl = (
+      process.env.URL ||
+      process.env.DEPLOY_PRIME_URL ||
+      "https://jobawardpng.netlify.app"
+    ).replace(/\/$/, "");
     const exp = Math.floor(Date.now() / 1000) + 60 * 60;
     const payload = `${tableId}.${recordId}.${pngFieldId}.${exp}`;
     const sig = createHmac("sha256", SECRET).update(payload).digest("hex");
