@@ -7,8 +7,17 @@
 //   QB_USER_TOKEN   Quickbase user token
 //   SHARED_SECRET   arbitrary string; must match the header sent by the Pipeline
 
+import { createRequire } from "module";
+import { pathToFileURL } from "url";
 import { pdfToPng } from "pdf-to-png-converter";
+import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import sharp from "sharp";
+
+// Serverless bundles often drop pdf.worker.mjs; point pdf.js at it explicitly.
+const require = createRequire(import.meta.url);
+pdfjs.GlobalWorkerOptions.workerSrc = pathToFileURL(
+  require.resolve("pdfjs-dist/legacy/build/pdf.worker.mjs")
+).href;
 
 const QB_REALM = process.env.QB_REALM;
 const QB_TOKEN = process.env.QB_USER_TOKEN;
