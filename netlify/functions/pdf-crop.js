@@ -7,6 +7,7 @@
 //   QB_USER_TOKEN   Quickbase user token
 //   SHARED_SECRET   arbitrary string; must match the header sent by the Pipeline
 
+import { createHmac } from "crypto";
 import { createRequire } from "module";
 import { pathToFileURL } from "url";
 import { pdfToPng } from "pdf-to-png-converter";
@@ -108,11 +109,25 @@ export default async (req) => {
     });
     if (!uploadRes.ok) return json({ error: "QB upload failed", detail: await uploadRes.text() }, 502);
 
+    // Signed public URL Outlook can fetch (no QB auth). Valid 1 hour.
+    const siteUrl = (process.env.URL || process.env.DEPLOY_PRIME_URL || "").replace(/\/$/, "");
+    const exp = Math.floor(Date.now() / 1000) + 60 * 60;
+    const payload = `${tableId}.${recordId}.${pngFieldId}.${exp}`;
+    const sig = createHmac("sha256", SECRET).update(payload).digest("hex");
+    const pngUrl =
+      `${siteUrl}/api/png` +
+      `?tableId=${encodeURIComponent(tableId)}` +
+      `&recordId=${encodeURIComponent(recordId)}` +
+      `&fieldId=${encodeURIComponent(pngFieldId)}` +
+      `&exp=${exp}` +
+      `&sig=${sig}`;
+
     return json({
       ok: true,
       recordId,
       output: `${baseName}_cropped.png`,
       bytes: trimmed.length,
+      pngUrl,
     });
   } catch (err) {
     console.error(err);
