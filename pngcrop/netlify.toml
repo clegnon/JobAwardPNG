@@ -1,0 +1,8 @@
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  external_node_modules = ["sharp", "@napi-rs/canvas", "pdfjs-dist", "pdf-to-png-converter"]
+
+[functions."pdf-crop"]
+  # PDF rendering + sharp can be slow on big files; give it headroom
+  timeout = 26
